@@ -1,0 +1,205 @@
+$mainBack: #FFBF8F
+$sideBack: #F74855
+$resultsBack: #EEE7E2
+$lightText: whitesmoke
+
+=Merriweather
+    font-family: 'Merriweather', serif
+
+body
+    display: table
+    height: 100%
+    width: 100%
+    margin: 0
+    overflow: hidden
+    background: $mainBack
+    font-family: 'PT Sans', sans-serif
+
+.clear
+    display: block
+    width: 32px
+    height: 32px
+    &:before, &:after 
+        position: absolute
+        left: 15px
+        content: ' '
+        height: 33px
+        width: 2px
+        background-color: black
+    &:after
+        transform: rotate(-90deg)
+    &:active:before, &:active:after
+        background-color: gray
+
+a
+    color: #5076D8
+    text-decoration: none
+    font-weight: bold
+    &:hover
+        color: #ADC4FF
+    &:active
+        color: #FFF
+    
+.article-btn
+    background: $resultsBack + 5
+    font-size: 1.25em
+    font-weight: normal
+    margin: .5em
+    padding: 0.25em 0.5em
+    border: 1px solid $sideBack
+    border-radius: 5px
+    position: absolute
+    top: 0
+    right: 0
+    color: black
+    &:after
+        content: "Save"
+    &.saved:after
+        content: "Saved"
+    &:hover
+        background: $sideBack + 60
+        color: lightgray
+    &.saved, &.saved:hover
+        background: $sideBack
+        color: $lightText
+    #saved-item-container &
+        font-size: 0.85em
+        
+.item
+    background: $lightText
+    display: block
+    position: relative
+    width: 70%
+    min-width: 200px
+    max-width: 960px
+    margin: 1em auto
+    padding: 1em
+    border: 1px solid black
+    h1
+        font-size: 1.5em
+        margin-top: 0
+        margin-right: 70px
+        +Merriweather
+    
+#error-container
+    position: absolute
+    width: 100%
+    display: none
+    div
+        width: 400px
+        margin: 0 auto
+        background: #D84171
+        border: 1px solid #701834
+        border-top: none
+        border-bottom-width: 2px
+        .error
+            color: #EEE
+            margin: 15px
+            display: inline-block
+        .clear
+            float: right
+            position: relative
+            top: 8px
+            right: 7px
+            transform: rotate(45deg)
+        .clear:before, .clear:after
+            background-color: #d69aa9
+    
+#saved-item-container
+    background: $sideBack
+    position: absolute
+    z-index: 10
+    width: 300px
+    height: 100%
+    left: -300px
+#saved-item-btn
+    background: $sideBack
+    width: 100px
+    padding: 1em
+    position: absolute
+    left: 300px
+    color: $lightText
+    text-align: center
+    border-radius: 0 0 15px 0
+    &:hover
+        background: $sideBack + 40
+    &:active
+        background: $sideBack - 50
+#saved-items
+    overflow-y: scroll
+    height: 100%
+    .article-btn
+        &:after
+            content: "Clear"
+    .placeholder
+        text-align: center
+        font-style: italic
+
+.site-title
+    text-align: center
+    font-size: 3em
+    padding-top: 0.25em
+    margin-bottom: -0.25em
+    +Merriweather
+#search-container
+    display: table-cell
+    vertical-align: middle
+
+#search-bar-container
+    text-align: center
+    width: 50%
+    min-width: 500px
+    max-width: 960px
+    margin: 0 auto
+    .options
+        padding: .5em 0
+#search-bar
+    display: inline-block
+    width: 50%
+    height: 50px
+    padding-left: 1em
+    margin-left: 60px
+#search-btn
+    display: inline-block
+    width: 50px
+    height: 50px
+    margin-left: 10px
+    position: relative
+    top: 1.3em
+    opacity: 0.3
+    &.active
+        opacity: 1
+    .magnifier
+        transform: rotate(-45deg)
+    .clear
+        display: none
+    .circle
+        display: block
+        width: 65%
+        height: 65%
+        margin: 0 auto
+        border: 1px solid black
+        border-radius: 50%
+        &.spin
+            border: 2px dashed black
+            animation: SpinAnim 3s linear infinite
+    .handle
+        height: 35%
+        width: 6px
+        margin: 0 auto
+        background: black
+
+@keyframes SpinAnim
+    from
+        transform: rotate(0deg)
+    to
+        transform: rotate(359deg)
+        
+#search-results
+    display: none
+    height: 80vh
+    overflow-y: scroll
+    background: $resultsBack
+    .marker
+        text-align: center
+        color: $sideBack
