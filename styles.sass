@@ -14,6 +14,14 @@ body
   overflow: hidden
   background: $mainBack
   font-family: 'PT Sans', sans-serif
+  
+button
+  border: none
+  background: none
+  padding: 0
+  margin: 0
+  &:focus
+    outline: none
 
 .clear
   display: block
@@ -100,11 +108,8 @@ a
     position: relative
     transform: rotate(45deg)
     background: none
-    border: none
     &:before, &:after
       background-color: #d69aa9
-    &:focus
-      outline: none
 
 #saved-item-container
   background: $sideBack
