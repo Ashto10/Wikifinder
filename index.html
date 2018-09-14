@@ -1,49 +1,46 @@
 <html>
-    <head>
-        <link href="https://fonts.googleapis.com/css?family=Merriweather|PT+Sans" rel="stylesheet">
-        <link href="styles.css" rel="stylesheet" type="text/css">
-    </head>
-    <body>
-        <div id='error-container'>
-            <div>
-                <p class='error'>No results found</p>
-                <a class='clear'></a>
-            </div>
+  <head>
+    <link href="https://fonts.googleapis.com/css?family=Merriweather|PT+Sans" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    <div id='error-container'>
+      <p class='error'>No results found</p>
+      <button class='clear' />
+    </div>
+    <sidebar id="saved-item-container">
+      <a id="saved-item-btn">Saved Items</a>
+      <div id="saved-items">
+      </div>
+    </sidebar>
+
+    <main id="search-container">
+      <h1 class="site-title">Wikifinder</h1>
+      <div id="search-bar-container">
+        <input id="search-bar" type="text" placeholder="Enter your search term here">
+        <a id="search-btn">
+          <div class="magnifier">
+            <div class="clear"></div>
+            <div class="circle"></div>
+            <div class="handle"></div>
+          </div>
+        </a>
+
+        <div class="options">
+          <label for="results-count">Number of results</label>
+          <select id="results-count">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select> |
+          <a href="https://en.wikipedia.org/wiki/Special:Random" target="wikifinder">Get random article</a>
         </div>
-        <sidebar id="saved-item-container">
-            <a id="saved-item-btn">Saved Items</a>
-            <div id="saved-items">
-                <p class='placeholder'>No saved items to display.</p>
-            </div>
-        </sidebar>
-        
-        <main id="search-container">
-            <h1 class="site-title">Wikifinder</h1>
-            <div id="search-bar-container">
-                <input id="search-bar" type="text" placeholder="Enter your search term here">
-                <a id="search-btn">
-                    <div class="magnifier">
-                        <div class="clear"></div>
-                        <div class="circle"></div>
-                        <div class="handle"></div>
-                    </div>
-                </a>
-                
-                <div class="options">
-                    <label>Number of results</label>
-                    <select id="num-of-results">
-                        <option value="5">5</option>
-                        <option value="10" selected>10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
-                    </select> |
-                    <a href="https://en.wikipedia.org/wiki/Special:Random">Get random article</a>
-                </div>
-            </div>
-            <div id="search-results"></div>
-        </main>
-        
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-        <script src="script.js"></script>
-    </body>
+      </div>
+      <div id="search-results"></div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>
