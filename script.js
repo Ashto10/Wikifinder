@@ -2,48 +2,37 @@
   'use strict';
 
   /** Enum helper object */
-  var STATE = new Object({            
+  const STATE = Object.freeze({            
     READY: 0,
     LOADING: 1,
     DISPLAYING: 2
-  });                          
+  });
+
+  let savedArticles = {};
+
+  class article {
+    constructor(title, link, synopsis) {
+      this.title = title;
+      this.link = link;
+      this.synopsis = synopsis;
+    }
+
+    /** 
+    * Creates an article item at the specified location.
+    * @param {String} location - Whether to display the item within the saved items area, or the results area.
+    */
+    createArticle(location) {
+      $(location).append(
+        `<div class="item"><a href="${this.link}" target="wikifinder">`+
+        `<h1>${this.title}</h1></a>`+
+        `<button class="article-btn"></button>`+
+        `<p>${this.synopsis.length > 120 ? this.synopsis.substr(0,120) + "..." : this.synopsis}</p></div>`
+      );
+    }
+  }
+
   /** Used to keep track of the search bar's status (i.e. is it about to load results, is it waiting to, etc) */
   var currentState = STATE.READY;     
-
-  /** Creates an article item at the specified location. <summary>
-  * @param {String} title - The title text to add to the header.
-  * @param {String} link - The link to the Wikipedia article.
-  * @param {String} synopsis - A snippet of information from the article.
-  * @param {String} location - Whether to display the item within the saved items area, or the results area.
-  */
-  function CreateArticle (title, link, synopsis, location) {
-    var saved = ""; // Used to add class text if necessary
-    var tag = "#search-results";
-
-    switch (location) {    
-      case "results":
-        $("#saved-items").find("h1").each(function() {
-          if ($(this).text() === title) {
-            saved = " saved";
-            return false;
-          }
-        });
-        break;
-      case "save":
-        if (synopsis.length > 120) {
-          synopsis = synopsis.substr(0,120) + "...";
-        }
-        tag = "#saved-items";
-        break;
-                    }
-
-    $(tag).append(
-      "<div class='item'><a href='"+link+"' target='wikifinder'>"+
-      "<h1>"+title+"</h1></a>"+
-      "<button class='article-btn"+saved+"'></button>"+
-      "<p>"+synopsis+"</p></div>"
-    );
-  }
 
   /** Function used to animate the loading icon. */
   function AnimateLoading() {
@@ -112,7 +101,7 @@
           // Placeholder text if article has no synopsis
           synopsis = "A summary is not available for this article";
         }
-        CreateArticle(data[1][i], data[3][i], synopsis,"results");
+        new article(data[1][i], data[3][i], synopsis).createArticle("#search-results");
       }
 
       $("#search-results").append("<p class='marker'>End of results</p>");
@@ -138,44 +127,46 @@
     },5000);
   }
 
-  /**
-  * If #saved-items is blank, add some placeholder text.
-  */
-  function setPlaceholder() {
+  function saveArticle(el) {
+    document.getElementById('placeholder').style.display = 'none';
+    if (!$(el).hasClass("saved")) {
+      $(el).addClass("saved");
+      var title = $(el).siblings("a").text();
+      var link = $(el).prev("a").attr("href");
+      var synopsis = $(el).next().text();
+
+      if (!savedArticles.hasOwnProperty(title)) {
+        savedArticles[title] = new article(title, link, synopsis).createArticle("#saved-items");
+      }
+    }
+  }
+
+  function deleteArticle(el) {
+    var textToRemove = $(el).siblings("a").text();
+    el.closest(".item").remove();
+    $("#search-results").find("h1").each(function() {
+      if ($(this).text() === textToRemove) {
+        $(this).parent().siblings(".article-btn").removeClass("saved");
+      }
+    });
+
+    delete savedArticles[textToRemove];
+
     if ($("#saved-items").children(".item").length === 0) {
-      $("#saved-items").html("<p class='placeholder'>No saved items to display.</p>");
+      document.getElementById('placeholder').style.display = 'block';
     }
   }
 
   $(document).ready(function() {
-    setPlaceholder();
 
     // Add article to saved articles list
-    $("#search-results").on("click",".article-btn",function() {
-      if (!$(this).hasClass("saved")) {
-        $(this).addClass("saved");
-        var title = $(this).siblings("a").text();
-        var link = $(this).prev("a").attr("href");
-        var synopsis = $(this).next().text();
-
-        if ($("#saved-items").children(".item").length === 0) {
-          $("#saved-items").html("");
-        }
-        CreateArticle(title,link,synopsis,"save");
-      }
+    $("#search-results").on("click",".article-btn",function(event) {
+      saveArticle(this);
     });
 
     // Remove article from saved articles list
     $("#saved-items").on("click",".article-btn",function() {
-      var textToRemove = $(this).siblings("a").text();
-      this.closest(".item").remove();
-      setPlaceholder();
-      $("#search-results").find("h1").each(function(){
-        if ($(this).text() === textToRemove) {
-          $(this).parent().siblings(".article-btn").removeClass("saved");
-          return false;
-        }
-      });
+      deleteArticle(this);
     });
 
     // Slide saved items list in/out
