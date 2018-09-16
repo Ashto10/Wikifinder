@@ -1,3 +1,4 @@
+/* CONSTANTS */
 $mainBack: #FFBF8F
 $sideBack: #F74855
 $resultsBack: #EEE7E2
@@ -5,13 +6,13 @@ $lightText: whitesmoke
 
 =Merriweather
   font-family: 'Merriweather', serif
-
-body
-  display: table
+  
+html, body
   height: 100%
-  width: 100%
   margin: 0
-  overflow: hidden
+  padding: 0
+  
+body
   background: $mainBack
   font-family: 'PT Sans', sans-serif
   
@@ -24,7 +25,6 @@ button
     outline: none
 
 .clear
-  display: block
   width: 32px
   height: 32px
   &:before, &:after 
@@ -40,30 +40,39 @@ button
     background-color: gray
 
 a
-  color: #5076D8
+  color: #4286f4
   text-decoration: none
   font-weight: bold
   &:hover
-      color: #ADC4FF
+      color: #70a6ff
   &:active
-      color: #FFF
+      color: #ADC4FF
 
+.item
+  background: $lightText
+  position: relative
+  width: 80%
+  min-width: 200px
+  max-width: 960px
+  margin: 1em auto
+  padding: 0.5em 0.75em
+  border: 1px solid darken($lightText, 40)
+  h1
+    font-size: 1.5em
+    margin: .2em 0
+    +Merriweather
+    
 .article-btn
   background: $resultsBack + 5
   font-size: 1.25em
-  font-weight: normal
   margin: .5em
-  padding: 0.25em 0.5em
+  padding: 0.25em
   border: 1px solid $sideBack
   border-radius: 5px
   position: absolute
   top: 0
   right: 0
   color: black
-  &:after
-    content: "Save"
-  &.saved:after
-    content: "Saved"
   &:hover
     background: $sideBack + 60
     color: lightgray
@@ -72,22 +81,6 @@ a
     color: $lightText
   #saved-item-container
     font-size: 0.85em
-
-.item
-  background: $lightText
-  display: block
-  position: relative
-  width: 70%
-  min-width: 200px
-  max-width: 960px
-  margin: 1em auto
-  padding: 1em
-  border: 1px solid black
-  h1
-    font-size: 1.5em
-    margin-top: 0
-    margin-right: 70px
-    +Merriweather
 
 #error-container
   display: none
@@ -99,6 +92,7 @@ a
   border: 1px solid #701834
   border-top: none
   border-bottom-width: 2px
+  z-index: 10
   .error
     color: #EEE
     margin: 15px
@@ -111,22 +105,22 @@ a
     &:before, &:after
       background-color: #d69aa9
 
+/* SAVED ITEMS */
 #saved-item-container
   background: $sideBack
   position: absolute
-  z-index: 10
+  z-index: 5
   width: 300px
   height: 100%
   left: -300px
 #saved-item-btn
   background: $sideBack
-  width: 100px
+  width: 120px
   padding: 1em
   position: absolute
-  left: 300px
+  right: -120px
   color: $lightText
-  text-align: center
-  border-radius: 0 0 15px 0
+  border-bottom-right-radius: 15px
   &:hover
     background: $sideBack + 40
   &:active
@@ -134,66 +128,72 @@ a
 #saved-items
   overflow-y: scroll
   height: 100%
-  .article-btn
-    &:after
-      content: "Clear"
+
 #placeholder
   text-align: center
   font-style: italic
 
+/* SEARCHBAR */
+main
+  height: 100%
+  
+#search-container
+  display: flex
+  flex-direction: column
+  justify-content: center
+  
 .site-title
+  margin: 0 0 -0.25em
   text-align: center
   font-size: 3em
   padding-top: 0.25em
-  margin-bottom: -0.25em
   +Merriweather
-#search-container
-  display: table-cell
-  vertical-align: middle
 
 #search-bar-container
+  display: flex
+  flex-wrap: wrap
   text-align: center
-  width: 50%
-  min-width: 500px
-  max-width: 960px
-  margin: 0 auto
-  .options
-    padding: .5em 0
+  justify-content: center
+  align-items: center
+  margin: 10px 0
+  
 #search-bar
-  display: inline-block
   width: 50%
   height: 50px
   padding-left: 1em
-  margin-left: 60px
+  margin-left: 54px
+  
 #search-btn
-  display: inline-block
   width: 50px
   height: 50px
-  margin-left: 10px
-  position: relative
-  top: 1.3em
   opacity: 0.3
+  margin-left: 4px
   &.active
     opacity: 1
-  .magnifier
-    transform: rotate(-45deg)
   .clear
     display: none
+  .magnifier
+    width: 100%
+    height: 100%
+    transform: rotate(-45deg)
+  .handle
+    height: 35%
+    width: 5px
+    margin: 0 auto
+    background: black
   .circle
-    display: block
-    width: 65%
-    height: 65%
+    width: 60%
+    height: 60%
     margin: 0 auto
     border: 1px solid black
     border-radius: 50%
     &.spin
       border: 2px dashed black
       animation: SpinAnim 3s linear infinite
-  .handle
-    height: 35%
-    width: 6px
-    margin: 0 auto
-    background: black
+      
+.options
+  text-align: center
+  margin-bottom: 10px
 
 @keyframes SpinAnim
   from

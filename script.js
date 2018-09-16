@@ -21,11 +21,11 @@
     * Creates an article item at the specified location.
     * @param {String} location - Whether to display the item within the saved items area, or the results area.
     */
-    createArticle(location) {
+    createArticle(location, btnText) {
       $(location).append(
         `<div class="item"><a href="${this.link}" target="wikifinder">`+
         `<h1>${this.title}</h1></a>`+
-        `<button class="article-btn"></button>`+
+        `<button class="article-btn">${btnText}</button>`+
         `<p>${this.synopsis.length > 120 ? this.synopsis.substr(0,120) + "..." : this.synopsis}</p></div>`
       );
     }
@@ -101,7 +101,7 @@
           // Placeholder text if article has no synopsis
           synopsis = "A summary is not available for this article";
         }
-        new article(data[1][i], data[3][i], synopsis).createArticle("#search-results");
+        new article(data[1][i], data[3][i], synopsis).createArticle("#search-results", 'Save');
       }
 
       $("#search-results").append("<p class='marker'>End of results</p>");
@@ -136,7 +136,7 @@
       var synopsis = $(el).next().text();
 
       if (!savedArticles.hasOwnProperty(title)) {
-        savedArticles[title] = new article(title, link, synopsis).createArticle("#saved-items");
+        savedArticles[title] = new article(title, link, synopsis).createArticle("#saved-items", "Clear");
       }
     }
   }
@@ -146,7 +146,7 @@
     el.closest(".item").remove();
     $("#search-results").find("h1").each(function() {
       if ($(this).text() === textToRemove) {
-        $(this).parent().siblings(".article-btn").removeClass("saved");
+        $(this).parent().siblings(".article-btn").removeClass("saved").text('Save');
       }
     });
 
@@ -161,6 +161,7 @@
 
     // Add article to saved articles list
     $("#search-results").on("click",".article-btn",function(event) {
+      $(this).text('Saved');
       saveArticle(this);
     });
 
