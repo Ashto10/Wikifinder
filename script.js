@@ -9,12 +9,14 @@
   });
 
   let savedArticles = {};
+  let searchResults = {};
 
   class article {
     constructor(title, link, synopsis) {
       this.title = title;
       this.link = link;
       this.synopsis = synopsis;
+      this.element;
     }
 
     /** 
@@ -22,17 +24,19 @@
     * @param {String} location - Whether to display the item within the saved items area, or the results area.
     */
     createArticle(location, btnText) {
-      $(location).append(
-        `<div class="item"><a href="${this.link}" target="wikifinder">`+
-        `<h1>${this.title}</h1></a>`+
-        `<button class="article-btn">${btnText}</button>`+
-        `<p>${this.synopsis.length > 120 ? this.synopsis.substr(0,120) + "..." : this.synopsis}</p></div>`
-      );
+      this.element = document.createElement('div');
+      this.element.setAttribute('class', 'item');
+      this.element.innerHTML = `
+<a class="article-link" href="${this.link}" target="wikifinder">
+<h1 class="article-title">${this.title}</h1></a>
+<button class="article-btn">${btnText}</button>
+<p class="article-synopsis">${this.synopsis}</p>`;
+      $(location).append(this.element);
     }
   }
 
   /** Used to keep track of the search bar's status (i.e. is it about to load results, is it waiting to, etc) */
-  var currentState = STATE.READY;     
+  let currentState = STATE.READY;     
 
   /** Function used to animate the loading icon. */
   function AnimateLoading() {
@@ -65,18 +69,15 @@
     // Start animating the loading icon before doing anything
     AnimateLoading();
 
-    var numberOfResults = $("#results-count option:selected").val();
+    let numberOfResults = $("#results-count option:selected").val();
 
     $.ajax({
       dataType:"json",
       cache: false,
       url: 'https://en.wikipedia.org/w/api.php?action=opensearch&datatype=json&limit='+numberOfResults+'&search='+searchTerm+'&callback=?',
-      success: function(data) {
-        BuildResults(data); 
-      },
-      error: function() {
-        DisplayError("Unable to load");
-      }, timeout: 10000
+      success: data => BuildResults(data),
+      error: () => DisplayError("Unable to load"),
+      timeout: 1000
     });
   }
 
@@ -88,20 +89,22 @@
     currentState = STATE.DISPLAYING;
     $("#search-results").html("");
 
-    var numberOfResults = data[1].length;
+    let numberOfResults = data[1].length;
 
-    $("#search-results").append("<p class='marker'>Displaying "+numberOfResults+" results</p>");
 
     if (numberOfResults === 0) {
       DisplayError("No results found");
     } else {
-      for (var i = 0; i < data[1].length; i++) {
-        var synopsis = data[2][i];
+      $("#search-results").append("<p class='marker'>Displaying "+numberOfResults+" results</p>");
+      for (let i = 0; i < data[1].length; i++) {
+        let synopsis = data[2][i];
         if (synopsis === "") {
           // Placeholder text if article has no synopsis
           synopsis = "A summary is not available for this article";
         }
-        new article(data[1][i], data[3][i], synopsis).createArticle("#search-results", 'Save');
+        let result = new article(data[1][i], data[3][i], synopsis);
+        result.createArticle("#search-results", 'Save');
+        searchResults[data[1][i]] = result;
       }
 
       $("#search-results").append("<p class='marker'>End of results</p>");
@@ -128,12 +131,21 @@
   }
 
   function saveArticle(el) {
-    document.getElementById('placeholder').style.display = 'none';
-    if (!$(el).hasClass("saved")) {
-      $(el).addClass("saved");
-      var title = $(el).siblings("a").text();
-      var link = $(el).prev("a").attr("href");
-      var synopsis = $(el).next().text();
+    if (!el.classList.contains('saved')) {
+      document.getElementById('placeholder').style.display = 'none';
+
+      let title = el.querySelector('.article-title').innerHTML;
+      let link = el.querySelector('.article-link').getAttribute('href');
+      let synopsis = el.querySelector('.article-synopsis').innerHTML;
+      
+      if (synopsis.length > 120) {
+        let space = synopsis.indexOf(' ', 120);
+        synopsis = synopsis.substr(0, space) + '...';
+      }
+      
+      let button = el.querySelector('.article-btn');
+      button.classList.add('saved');
+      button.innerHTML = 'Saved';
 
       if (!savedArticles.hasOwnProperty(title)) {
         savedArticles[title] = new article(title, link, synopsis).createArticle("#saved-items", "Clear");
@@ -141,16 +153,16 @@
     }
   }
 
-  function deleteArticle(el) {
-    var textToRemove = $(el).siblings("a").text();
-    el.closest(".item").remove();
-    $("#search-results").find("h1").each(function() {
-      if ($(this).text() === textToRemove) {
-        $(this).parent().siblings(".article-btn").removeClass("saved").text('Save');
-      }
-    });
+  function deleteArticle(el) {  
+    let title = el.querySelector('.article-title').innerHTML;
+    if (searchResults[title]) {
+      let button = searchResults[title].element.querySelector('.article-btn');
+      button.innerHTML = "Save";
+      button.classList.remove('saved');
+    }
 
-    delete savedArticles[textToRemove];
+    el.parentNode.removeChild(el);
+    delete savedArticles[title];
 
     if ($("#saved-items").children(".item").length === 0) {
       document.getElementById('placeholder').style.display = 'block';
@@ -158,21 +170,28 @@
   }
 
   $(document).ready(function() {
-
     // Add article to saved articles list
-    $("#search-results").on("click",".article-btn",function(event) {
-      $(this).text('Saved');
-      saveArticle(this);
+    document.querySelector('#search-results').addEventListener('click', e => {
+      if (e.target && e.target.classList.contains('article-btn')) {
+        saveArticle(e.target.parentNode);
+      }
     });
+
 
     // Remove article from saved articles list
-    $("#saved-items").on("click",".article-btn",function() {
-      deleteArticle(this);
+    document.querySelector('#saved-items').addEventListener('click', e => {
+      if (e.target && e.target.classList.contains('article-btn')) {
+        deleteArticle(e.target.parentNode);
+      }
     });
+
+    //    $("#saved-items").on("click",".article-btn",function() {
+    //      deleteArticle(this);
+    //    });
 
     // Slide saved items list in/out
     $("#saved-item-btn").click(function() {
-      var test = $("#saved-item-container").css("left");
+      let test = $("#saved-item-container").css("left");
       if (test == "-300px") {
         $("#saved-item-container").animate({"left":"0px"},"ease-in");
       } else if (test == "0px") {
@@ -187,18 +206,19 @@
 
     // Initiate search when magnifying glass is clicked
     $("#search-btn").click(function() {
-      var searchTerm = $("#search-bar").val();
+      let searchTerm = $("#search-bar").val();
       if (currentState == STATE.READY && searchTerm !== "") {
         FetchResults(searchTerm);
       } else if (currentState == STATE.DISPLAYING) {
         AnimateClosing();
+        searchResults = {};
         currentState = STATE.READY;
       }
     });
 
     // Close results area when text is altered
     $("#search-bar").on("input", function(e) {
-      var inputText = $("#search-bar").val();
+      let inputText = $("#search-bar").val();
       if (inputText === "" ) {
         $("#search-btn").removeClass("active");
       } else {
