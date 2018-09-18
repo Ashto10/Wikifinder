@@ -27,11 +27,13 @@ button
 .clear
   width: 32px
   height: 32px
+  transform: rotate(45deg)
+  box-sizing: border-box
   &:before, &:after 
     position: absolute
     left: 15px
     content: ' '
-    height: 33px
+    height: 100%
     width: 2px
     background-color: black
   &:after
@@ -48,7 +50,7 @@ a
   &:active
       color: #ADC4FF
 
-.item
+.article
   background: $lightText
   position: relative
   width: 80%
@@ -79,41 +81,49 @@ a
   &.saved, &.saved:hover
     background: $sideBack
     color: $lightText
-  #saved-item-container
+  #saved-article-container
     font-size: 0.85em
 
+/* ERROR CONTAINER */
 #error-container
-  display: none
   position: absolute
+  top: 0
   width: 400px
   left: 50%
+  height: 55px
   transform: translateX(-50%)
   background: #D84171
   border: 1px solid #701834
   border-top: none
   border-bottom-width: 2px
   z-index: 10
+  transition: top 0.8s ease-out
+  box-sizing: border-box
+  &.hidden
+    top: -55px
+    
   .error
     color: #EEE
     margin: 15px
     display: inline-block
   .clear
     float: right
-    position: relative
-    transform: rotate(45deg)
     background: none
     &:before, &:after
       background-color: #d69aa9
 
-/* SAVED ITEMS */
-#saved-item-container
+/* SAVED ARTICLES */
+#saved-article-container
   background: $sideBack
   position: absolute
   z-index: 5
   width: 300px
   height: 100%
-  left: -300px
-#saved-item-btn
+  left: 0px
+  transition: left 0.8s ease-in-out
+  &.hidden
+    left: -300px
+#saved-article-btn
   background: $sideBack
   width: 120px
   padding: 1em
@@ -125,7 +135,7 @@ a
     background: $sideBack + 40
   &:active
     background: $sideBack - 50
-#saved-items
+#saved-articles
   overflow-y: auto
   height: 100%
 
@@ -172,24 +182,35 @@ main
     opacity: 1
   .clear
     display: none
-  .magnifier
+    width: 70%
+    height: 70%
+    margin: 7px 5px
+#magnifier
+  width: 100%
+  height: 100%
+  transform: rotate(-45deg)
+#handle
+  height: 35%
+  width: 5px
+  margin: 0 auto
+  background: black
+  transition: height 0.5s
+#glass
+  width: 60%
+  height: 60%
+  margin: 0 auto
+  border: 1px solid black
+  border-radius: 50%
+  transition: width 0.5s, height 0.5s
+
+.spin
+  #handle
+    height: 0
+  #glass
     width: 100%
     height: 100%
-    transform: rotate(-45deg)
-  .handle
-    height: 35%
-    width: 5px
-    margin: 0 auto
-    background: black
-  .circle
-    width: 60%
-    height: 60%
-    margin: 0 auto
-    border: 1px solid black
-    border-radius: 50%
-    &.spin
-      border: 2px dashed black
-      animation: SpinAnim 3s linear infinite
+    border: 2px dashed black
+    animation: SpinAnim 3s linear infinite
       
 .options
   text-align: center
@@ -202,10 +223,13 @@ main
     transform: rotate(359deg)
 
 #search-results
-  display: none
-  height: 80vh
+  display: show
+  height: 90vh
   overflow-y: scroll
   background: $resultsBack
+  transition: height 0.5s
   .marker
     text-align: center
     color: $sideBack
+  &.hidden
+    height: 0vh

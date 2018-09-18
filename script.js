@@ -1,22 +1,59 @@
 (function() {
   'use strict';
 
-  /** Enum helper object */
-  const STATE = Object.freeze({            
-    READY: 0,
-    LOADING: 1,
-    DISPLAYING: 2
-  });
+  /** Shorthand functions for selecting elements. */
+  const $ = {
+    getID: el => document.getElementById(el),
+    query: (parent, search) => parent.querySelector(search)
+  };
 
-  let savedArticles = {};
+  /** Object used to track displayed articles */
   let searchResults = {};
 
-  class article {
+  /** Object used to track saved articles */
+  let savedArticles = {};
+
+  /**
+  * Get requested data from API and unpack the received JSONP.  
+  * @param {String} url - the site to get information from.
+  * @param {String} loadTime - An alloted amount of time before firing timeout.
+  * @return {Promise}
+  */
+  function execJSONP(url, loadTime) {  
+    return new Promise((resolve, reject) => {
+      let script = document.createElement('script');
+      let cb = 'exec'+Math.floor((Math.random()*65535)+1);
+      script.async = true;
+      script.src = url + '&callback=' + cb;
+      script.id = cb;
+
+      document.getElementsByTagName('head')[0].appendChild(script);
+
+      let deleteSrc = () => {
+        let scr = $.getID(cb);
+        scr.parentNode.removeChild(scr);
+        window[cb] = null;
+        delete window[cb];
+      };
+
+      let timeout = setTimeout(() => {
+        reject('timed out');
+        deleteSrc();
+      }, loadTime);
+
+      window[cb] = (data) => {
+        resolve(data);
+        clearTimeout(timeout);
+        deleteSrc();
+      };
+    });
+  }
+
+  class Article {
     constructor(title, link, synopsis) {
       this.title = title;
       this.link = link;
       this.synopsis = synopsis;
-      this.element;
     }
 
     /** 
@@ -25,39 +62,38 @@
     */
     createArticle(location, btnText) {
       this.element = document.createElement('div');
-      this.element.setAttribute('class', 'item');
+      this.element.setAttribute('class', 'article');
       this.element.innerHTML = `
-<a class="article-link" href="${this.link}" target="wikifinder">
-<h1 class="article-title">${this.title}</h1></a>
-<button class="article-btn">${btnText}</button>
-<p class="article-synopsis">${this.synopsis}</p>`;
-      $(location).append(this.element);
+        <a class="article-link" href="${this.link}" target="wikifinder">
+        <h1 class="article-title">${this.title}</h1></a>
+        <button class="article-btn">${btnText}</button>
+        <p class="article-synopsis">${this.synopsis}</p>`;
+      $.getID(location).appendChild(this.element);
+    }
+    
+    /**
+    * Mark button as pressed via styling.
+    */
+    setButton() {
+      let button = $.query(this.element, '.article-btn');
+      button.classList.add('saved');
+      button.innerHTML = 'Saved';
     }
   }
-
-  /** Used to keep track of the search bar's status (i.e. is it about to load results, is it waiting to, etc) */
-  let currentState = STATE.READY;     
-
-  /** Function used to animate the loading icon. */
-  function AnimateLoading() {
-    $(".handle").animate({"height":"0%"});
-    $(".circle").animate({"height":"99%","width":"99%"}).addClass("spin");
-  }
-
-  /** Function used to animate the opening of the results area. **/
+  
+  /** Animate opening the results area, and hide the magnifying glass. **/
   function AnimateOpening() {
-    $(".circle").removeClass("spin");
-    $(".handle, .circle").hide();
-    $("#search-container .clear").show();
-    $("#search-results").slideToggle();
+    $.getID('magnifier').style.display = 'none';
+    $.query(document, "#search-btn .clear").style.display = 'block';
+    $.getID('search-results').classList.remove("hidden");
   }
 
-  /** Function used to animate the closing of the results area. */
+  /** Animate closing the results area, and display the magnifying glass. */
   function AnimateClosing() {
-    $("#search-container .clear").hide();
-    $(".handle").show().animate({"height":"35%"});
-    $(".circle").removeClass("spin").show().animate({"height":"65%","width":"65%"});
-    $("#search-results").slideUp();
+    $.getID('magnifier').classList.remove('spin');
+    $.query(document, "#search-btn .clear").style.display = 'none';
+    $.getID('magnifier').style.display = 'block';
+    $.getID('search-results').classList.add("hidden");
   }
 
   /**
@@ -65,53 +101,58 @@
   * @param {String} searchTerm - the query to look for.
   */
   function FetchResults(searchTerm) {
-    currentState = STATE.LOADING;
+    if (searchTerm === "") {
+      return;
+    }
+    searchResults = {};
+
     // Start animating the loading icon before doing anything
-    AnimateLoading();
+    $.getID('magnifier').classList.add('spin');
 
-    let numberOfResults = $("#results-count option:selected").val();
+    let numberOfResults = $.query(document, "#results-count option:checked").getAttribute('value');
+    let url = 'https://en.wikipedia.org/w/api.php?action=opensearch&datatype=json&limit='+numberOfResults+'&search='+searchTerm;
 
-    $.ajax({
-      dataType:"json",
-      cache: false,
-      url: 'https://en.wikipedia.org/w/api.php?action=opensearch&datatype=json&limit='+numberOfResults+'&search='+searchTerm+'&callback=?',
-      success: data => BuildResults(data),
-      error: () => DisplayError("Unable to load"),
-      timeout: 1000
+    execJSONP(url, 10000).then(data => {
+      BuildResults(data);
+    }).catch(error => {
+      console.log(error);
     });
   }
 
   /**
-  * Using the results from Wikipedia's API, put together article items for the results area. 
+  * Using the results from Wikipedia's API, put together articles for the results area. 
   * @param {Object} data - The search results.
   */
   function BuildResults (data) {
-    currentState = STATE.DISPLAYING;
-    $("#search-results").html("");
+    let results = $.getID('search-results');
+    results.innerHTML = "";
 
     let numberOfResults = data[1].length;
+    if (numberOfResults === 0) { return DisplayError("No results found"); }
 
+    let topMarker = document.createElement('p');
+    topMarker.classList = 'marker';
+    topMarker.innerHTML = `Displaying ${numberOfResults} results`;
+    let bottomMarker = topMarker.cloneNode(false);
+    bottomMarker.innerHTML = `End of results`;    
 
-    if (numberOfResults === 0) {
-      DisplayError("No results found");
-    } else {
-      $("#search-results").append("<p class='marker'>Displaying "+numberOfResults+" results</p>");
-      for (let i = 0; i < data[1].length; i++) {
-        let synopsis = data[2][i];
-        if (synopsis === "") {
-          // Placeholder text if article has no synopsis
-          synopsis = "A summary is not available for this article";
-        }
-        let result = new article(data[1][i], data[3][i], synopsis);
-        result.createArticle("#search-results", 'Save');
-        searchResults[data[1][i]] = result;
+    results.appendChild(topMarker);
+
+    for (let i = 0; i < data[1].length; i++) {
+      let title = data[1][i];
+      let synopsis = data[2][i] === "" ? "A summary is not available for this article." : data[2][i];
+      let article = new Article(title, data[3][i], synopsis);
+      article.createArticle("search-results", 'Save');
+      searchResults[title] = article;
+      if (savedArticles.hasOwnProperty(title)) {
+        article.setButton();
       }
-
-      $("#search-results").append("<p class='marker'>End of results</p>");
-
-      // Once everything is loaded, stop the loading animation and open up the results area
-      AnimateOpening();
     }
+
+    results.appendChild(bottomMarker);
+
+    // Once everything is loaded, stop the loading animation and open up the results area
+    AnimateOpening();
   }
 
   /**
@@ -119,44 +160,49 @@
   * @param {String} message - The error message to display.
   */
   function DisplayError(message) {
-    currentState = STATE.READY;
     // Close down the resuls area if necessary
     AnimateClosing();
-    $("#error-container .error").text(message);
-    $("#error-container").slideDown();
-    // Auto clear after 5 seconds
-    setTimeout(function() {
-      $("#error-container .clear").trigger("click");
-    },5000);
-  }
+    let error = $.getID('error-container');
+    $.query(document, '#error-container .error').innerHTML = message;
+    error.classList.remove('hidden');
 
+    // Auto clear after 5 seconds
+    setTimeout(() => error.classList.add('hidden'),5000);
+  }
+  
+  /**
+  * Creates a copy of an article element, and saves it to the user's list.
+  * @param {HTMLElement} el - the article element calling this function. 
+  */
   function saveArticle(el) {
     if (!el.classList.contains('saved')) {
-      document.getElementById('placeholder').style.display = 'none';
+      $.getID('placeholder').style.display = 'none';
 
-      let title = el.querySelector('.article-title').innerHTML;
-      let link = el.querySelector('.article-link').getAttribute('href');
-      let synopsis = el.querySelector('.article-synopsis').innerHTML;
-      
+      let title = $.query(el, '.article-title').innerHTML;
+      let link = $.query(el, '.article-link').getAttribute('href');
+      let synopsis = $.query(el, '.article-synopsis').innerHTML;
+
       if (synopsis.length > 120) {
         let space = synopsis.indexOf(' ', 120);
         synopsis = synopsis.substr(0, space) + '...';
       }
       
-      let button = el.querySelector('.article-btn');
-      button.classList.add('saved');
-      button.innerHTML = 'Saved';
+      searchResults[title].setButton();
 
       if (!savedArticles.hasOwnProperty(title)) {
-        savedArticles[title] = new article(title, link, synopsis).createArticle("#saved-items", "Clear");
+        savedArticles[title] = new Article(title, link, synopsis).createArticle("saved-articles", "Clear");
       }
     }
   }
 
+  /**
+  * Delete the element from the user's saved article list
+  * @param {HTMLElement} el - the article element calling this function. 
+  */
   function deleteArticle(el) {  
-    let title = el.querySelector('.article-title').innerHTML;
+    let title = $.query(el, '.article-title').innerHTML;
     if (searchResults[title]) {
-      let button = searchResults[title].element.querySelector('.article-btn');
+      let button = $.query(searchResults[title].element, '.article-btn');
       button.innerHTML = "Save";
       button.classList.remove('saved');
     }
@@ -164,14 +210,15 @@
     el.parentNode.removeChild(el);
     delete savedArticles[title];
 
-    if ($("#saved-items").children(".item").length === 0) {
-      document.getElementById('placeholder').style.display = 'block';
+    // If article is in search results, reenable save button
+    if ($.getID('saved-articles').childElementCount === 1) {
+      $.getID('placeholder').style.display = 'block';
     }
   }
 
-  $(document).ready(function() {
+  document.addEventListener('DOMContentLoaded', () => {
     // Add article to saved articles list
-    document.querySelector('#search-results').addEventListener('click', e => {
+    $.query(document, '#search-results').addEventListener('click', e => {
       if (e.target && e.target.classList.contains('article-btn')) {
         saveArticle(e.target.parentNode);
       }
@@ -179,62 +226,50 @@
 
 
     // Remove article from saved articles list
-    document.querySelector('#saved-items').addEventListener('click', e => {
+    $.query(document, '#saved-articles').addEventListener('click', e => {
       if (e.target && e.target.classList.contains('article-btn')) {
         deleteArticle(e.target.parentNode);
       }
     });
 
-    //    $("#saved-items").on("click",".article-btn",function() {
-    //      deleteArticle(this);
-    //    });
-
-    // Slide saved items list in/out
-    $("#saved-item-btn").click(function() {
-      let test = $("#saved-item-container").css("left");
-      if (test == "-300px") {
-        $("#saved-item-container").animate({"left":"0px"},"ease-in");
-      } else if (test == "0px") {
-        $("#saved-item-container").animate({"left":"-300px"},"ease-out");
-      }
+    // Slide saved article list in/out
+    $.getID('saved-article-btn').addEventListener('click', () => {
+      $.getID('saved-article-container').classList.toggle('hidden');
     });
 
+    let errorContainer = $.getID('error-container');
+    
     // Clear error screen
-    $("#error-container .clear").click(function() {
-      $("#error-container").slideUp();
+    $.query(errorContainer, ".clear").addEventListener('click', () => {
+      errorContainer.classList.add('hidden');
     });
 
+    // Close results area
+    $.query(document, '#search-btn .clear').addEventListener('click', () => {
+      AnimateClosing();
+    });
+
+    let searchBar = $.getID('search-bar');
+    
     // Initiate search when magnifying glass is clicked
-    $("#search-btn").click(function() {
-      let searchTerm = $("#search-bar").val();
-      if (currentState == STATE.READY && searchTerm !== "") {
-        FetchResults(searchTerm);
-      } else if (currentState == STATE.DISPLAYING) {
-        AnimateClosing();
-        searchResults = {};
-        currentState = STATE.READY;
-      }
+    $.getID('magnifier').addEventListener('click', () => {
+      FetchResults(searchBar.value);
     });
 
-    // Close results area when text is altered
-    $("#search-bar").on("input", function(e) {
-      let inputText = $("#search-bar").val();
-      if (inputText === "" ) {
-        $("#search-btn").removeClass("active");
+    // Handle input into searchbar
+    searchBar.addEventListener('keyup', e => {
+      if (searchBar.value === "") {
+        $.getID('search-btn').classList.remove('active');
       } else {
-        $("#search-btn").addClass("active");
+        $.getID('search-btn').classList.add('active');
       }
-      if (currentState != STATE.READY) {
-        currentState = STATE.READY;
+      // Close search area if user types while it's open
+      if ($.getID('search-results').classList !== 'hidden') {
         AnimateClosing();
       }
-    });
-
-    // Initiate search when user hits enter key into search bar
-    $('#search-bar').keyup(function(e){
-      if(e.keyCode == 13)
-      {
-        $("#search-btn").trigger("click");
+      // Initiate search when pressing [Enter].
+      if (e.keyCode === 13) {
+        FetchResults(searchBar.value);
       }
     });
   });

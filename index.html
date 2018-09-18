@@ -6,13 +6,13 @@
     <link href="styles.css" rel="stylesheet" type="text/css">
   </head>
   <body>
-    <div id='error-container'>
+    <div id='error-container' class="hidden">
       <p class='error'>No results found</p>
       <button class='clear'></button>
     </div>
-    <aside id="saved-item-container">
-      <button id="saved-item-btn" value="Saved Items">Saved Items</button>
-      <div id="saved-items">
+    <aside id="saved-article-container" class="hidden">
+      <button id="saved-article-btn" value="Saved Items">Saved Items</button>
+      <div id="saved-articles">
         <p id='placeholder'>No saved items to display.</p>
       </div>
     </aside>
@@ -22,10 +22,10 @@
       <div id="search-bar-container">
         <input id="search-bar" type="text" placeholder="Enter your search term here">
         <button id="search-btn">
-          <div class="magnifier">
-            <div class="clear"></div>
-            <div class="circle"></div>
-            <div class="handle"></div>
+          <div class="clear"></div>
+          <div id="magnifier">
+            <div id="glass"></div>
+            <div id="handle"></div>
           </div>
         </button>
       </div>
@@ -39,10 +39,9 @@
         </select> |
         <a href="https://en.wikipedia.org/wiki/Special:Random" target="wikifinder">Get random article</a>
       </div>
-      <div id="search-results"></div>
+      <div id="search-results" class="hidden"></div>
     </main>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="script.js"></script>
   </body>
 </html>
